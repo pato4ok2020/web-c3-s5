@@ -1,0 +1,102 @@
+// use prisma-8
+
+enum Role {
+  CLIENT
+  COMPANY
+}
+
+enum OrderStatus {
+  NEW
+  COOKING
+  DELIVERING
+  DELIVERED
+  CANCELED
+}
+
+model User {
+  id       Uuid     @id @default(uuid())
+  email    String   @unique
+  password String
+  role     Role
+  client   Client?
+  company  Company?
+}
+
+model Client {
+  id        Uuid       @id @default(uuid())
+  name      String
+  userId    Uuid       @unique
+  user      User       @relation(fields: [userId], references: [id])
+  baskets   Basket[]
+  orders    Order[]
+  feedbacks Feedback[]
+}
+
+model Company {
+  id          Uuid       @id @default(uuid())
+  name        String
+  userId      Uuid       @unique
+  user        User       @relation(fields: [userId], references: [id])
+  description String?
+  imageUrl    String?
+  products    Product[]
+  orders      Order[]
+  feedbacks   Feedback[]
+}
+
+model Product {
+  id             Uuid            @id @default(uuid())
+  name           String
+  cost           Int
+  amount         Int
+  imageUrl       String?
+  isAvailable    Boolean         @default(true)
+  companyId      Uuid
+  company        Company         @relation(fields: [companyId], references: [id])
+  baskets        Basket[]
+  orderPositions OrderPosition[]
+}
+
+model Basket {
+  id        Uuid    @id @default(uuid())
+  amount    Int
+  clientId  Uuid
+  client    Client  @relation(fields: [clientId], references: [id])
+  productId Uuid
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([clientId, productId])
+}
+
+model Order {
+  id        Uuid              @id @default(uuid())
+  status    OrderStatus       @default(NEW)
+  address   String
+  createdAt TimestamptzString @default(now())
+  clientId  Uuid
+  client    Client            @relation(fields: [clientId], references: [id])
+  companyId Uuid
+  company   Company           @relation(fields: [companyId], references: [id])
+  positions OrderPosition[]
+}
+
+model OrderPosition {
+  id        Uuid    @id @default(uuid())
+  amount    Int
+  cost      Int
+  orderId   Uuid
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId Uuid
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Feedback {
+  id        Uuid              @id @default(uuid())
+  text      String?
+  rate      Int
+  createdAt TimestamptzString @default(now())
+  clientId  Uuid
+  client    Client            @relation(fields: [clientId], references: [id])
+  companyId Uuid
+  company   Company           @relation(fields: [companyId], references: [id])
+}
